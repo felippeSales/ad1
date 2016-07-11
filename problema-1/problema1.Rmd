@@ -16,6 +16,8 @@ ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dad
 
 ## 1 Panorama
 
+# a)
+
 Ao receber os dados a minha primeira curiosidade foi ver como seria a distribuição dos gastos dos parlamentares de acordo com o tipo do gasto, que é representado pela variável txtDescricao.
 
 ```{r}
@@ -36,12 +38,36 @@ vL + geom_boxplot(outlier.colour = "green", outlier.size = 3) + geom_point() + c
 
 ```
 
-De acordo com o último gráfico vemos que os gastos não são simétricos, ou seja, não tendem a se concentrar em uma região específica. O mais surpreende nesses dados são a quantidade de gastos atípicos, que são representados pelos pontinhos verdes.
+#b) 
+
+De acordo com o último gráfico vemos que os gastos não são simétricos, ou seja, não tendem a se concentrar em uma região específica. O mais surpreende nesses dados são a quantidade de gastos atípicos, que são representados pelos pontinhos verdes e também dos valores negativos na parte de Emissão de Bilhetes Aéreos.
+
+#c)
+
+Sugeriria a escolha de uma categoria e o estudo mais aprofundado desses dados atípicos, tentaria isolar esses dados e testaria se eles tem correlação com alguma variável ainda não estudada, como o tempo por exemplo.
 
 
 ## 2 Respostas
 
-#a
+#a) Em que tipo de despesas nossos parlamentares gastam mais recursos de sua cota?
+
+```{r}
+summarise(panorama, total=sum(vlrLiquido)) %>% arrange(desc(total))
+```
+
+Podemos observar nesse rank que os dois maiores gastos são com:
+
+1 - Divulgação da Atividade Parlamentar
+2 - Emissão de Bilhete Aéreo
 
 
+#b) Quais tipos de despesas têm despesas que mais variam, que têm valores mais desiguais?
 
+```{r}
+summarise(panorama, desvio=sd(vlrLiquido)) %>% arrange(desc(desvio))
+```
+
+Podemos observar nesse rank que os dois gastos que mais varião são:
+
+1 - Divulgacção da Atividade Parlamentar
+2 - Consultorias, Pesquisas e Trabalhos Técnicos
