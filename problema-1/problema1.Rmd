@@ -1,0 +1,47 @@
+---
+title: "Lab1 - Checkpoint 1"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+
+ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+
+```
+
+## 1 Panorama
+
+Ao receber os dados a minha primeira curiosidade foi ver como seria a distribuição dos gastos dos parlamentares de acordo com o tipo do gasto, que é representado pela variável txtDescricao.
+
+```{r}
+panorama <- group_by(ano.atual,txtDescricao)
+panorama_sum <- summarise(panorama, total=sum(vlrLiquido)) %>% arrange(desc(total))
+
+p <- ggplot(panorama_sum, aes(txtDescricao,total))
+p + geom_bar(stat="identity", position = "dodge") + coord_flip()
+```
+
+Podemos ver que no total, o maior gasto é com Divulgação de Atividade Parlamentar, seguido por Emissão de Bilhete Aéreo. Todavia, analisar a soma não nos dá muita informação, por isso decidi dar um zoom maior em como esses gastos são distribuidos dentro de cada um dessas categorias.
+
+```{r}
+
+vL <- ggplot(panorama, aes(txtDescricao,vlrLiquido))
+
+vL + geom_boxplot(outlier.colour = "green", outlier.size = 3) + geom_point() + coord_flip()
+
+```
+
+De acordo com o último gráfico vemos que os gastos não são simétricos, ou seja, não tendem a se concentrar em uma região específica. O mais surpreende nesses dados são a quantidade de gastos atípicos, que são representados pelos pontinhos verdes.
+
+
+## 2 Respostas
+
+#a
+
+
+
