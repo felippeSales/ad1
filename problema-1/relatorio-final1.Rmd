@@ -1,0 +1,77 @@
+---
+title: "Relatório Final - Problema 1"
+output: 
+  html_document:
+  theme: yeti
+  toc: true
+  toc_float: true
+  fig_width: 5
+  fig_height: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+
+ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+
+```
+
+# Intro
+
+Os dados que estão sendo analisados são referentes aos gastos declarados pelos deputados durante o ano de 2016. Cada parlamentar tem uma cota que pode ser usada com as suas despesas necessárias para o exercício da profissão, todavia os gastos tem que ser declarados, além disso eles também são divididos em categorias específicas. A ideia desse relatório é fazer uma análise exploratória e descritiva desses gastos e apartir dessa análise extrair informações úteis dos dados.
+
+# Escolha das perguntas guia
+
+A primeira curiosidade que surgiu ao receber os dados foi tentar descobrir qual a categoria que os deputados gastam mais.
+
+```{r ano.atual, echo=FALSE}
+
+panorama <- group_by(ano.atual,txtDescricao)
+
+panorama_sum <- summarise(panorama, total=sum(vlrLiquido))
+panorama_sum <- transform(panorama_sum, 
+                          txtDescricao = reorder(txtDescricao, total))
+
+panorama_sum <- transform(panorama_sum, total = total/ 1000000)
+
+p <- ggplot(panorama_sum, aes(x = txtDescricao, y = total))
+p + geom_bar(stat="identity", position = "dodge") + coord_flip() + labs(y = "Total dos Gastos em Milhões de Reais", x = "Categoria de Gastos")
+
+```
+
+Ao ver esse gráfico fica bem claro que os dois maiores gastos são com Divulgação da Atividade Parlamentar e Emissão de Bilhete Aéreo.
+
+-----------------------------------------------------------------------------------
+
+Outra curiosidade que surgiu foi saber quais as empresas que mais recebem dinheiro dos deputados.
+
+```{r}
+fornecedores <- group_by(ano.atual,txtFornecedor)
+fornecedores_sum <- summarise(fornecedores, total=sum(vlrLiquido))
+
+fornecedores_sum <- transform(fornecedores_sum, 
+                          txtFornecedor = reorder(txtFornecedor, total))
+
+top10Fornecedores <- head(fornecedores_sum,10)
+
+```
+
+
+
+
+
+# Qual a variação dos dados do fornecedor Douglas Cunha Da Silva Me?
+
+```{r , echo=FALSE}
+
+
+```
+
+# Qual o número de pessoas para quem um deputado já pagou passagem? ##levaEuParlamentar
+
+```{r , echo=FALSE}
+```
+

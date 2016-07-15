@@ -26,6 +26,7 @@ panorama_sum <- summarise(panorama, total=sum(vlrLiquido)) %>% arrange(desc(tota
 
 p <- ggplot(panorama_sum, aes(txtDescricao,total))
 p + geom_bar(stat="identity", position = "dodge") + coord_flip()
+
 ```
 
 Podemos ver que no total, o maior gasto é com Divulgação de Atividade Parlamentar, seguido por Emissão de Bilhete Aéreo. Todavia, analisar a soma não nos dá muita informação, por isso decidi dar um zoom maior em como esses gastos são distribuidos dentro de cada um dessas categorias.
@@ -71,3 +72,12 @@ Podemos observar nesse rank que os dois gastos que mais varião são:
 
 1 - Divulgacção da Atividade Parlamentar
 2 - Consultorias, Pesquisas e Trabalhos Técnicos
+
+
+
+```{r}
+panorama <- group_by(ano.atual,txtFornecedor)
+summarise(panorama, total=sum(vlrLiquido)) %>% arrange(desc(total))
+
+
+```

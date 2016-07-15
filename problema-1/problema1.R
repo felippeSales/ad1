@@ -31,7 +31,5 @@ ggplot(vlrLiquidoAgrupadosPartido, aes(factor(sgPartido), vlrLiquido)) +
 geom_bar(stat="identity", position = "dodge") + coord_flip()
 
 
-p <- ggplot(ano.atual, aes(datEmissao, vlrLiquido))
-p + geom_point()
 
 
