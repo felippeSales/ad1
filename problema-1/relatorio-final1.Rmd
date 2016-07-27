@@ -23,6 +23,8 @@ ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dad
 
 Os dados que estão sendo analisados são referentes aos gastos declarados pelos deputados durante o ano de 2016. Cada parlamentar tem uma cota que pode ser usada com as suas despesas necessárias para o exercício da profissão, todavia os gastos tem que ser declarados, além disso eles também são divididos em categorias específicas. A ideia desse relatório é fazer uma análise exploratória e descritiva desses gastos e apartir dessa análise extrair informações úteis dos dados.
 
+-----------------------------------------------------------------------------------
+
 # Escolha das perguntas guia
 
 A primeira curiosidade que surgiu ao receber os dados foi tentar descobrir qual a categoria que os deputados gastam mais.
@@ -52,26 +54,118 @@ Outra curiosidade que surgiu foi saber quais as empresas que mais recebem dinhei
 fornecedores <- group_by(ano.atual,txtFornecedor)
 fornecedores_sum <- summarise(fornecedores, total=sum(vlrLiquido))
 
-fornecedores_sum <- transform(fornecedores_sum, 
+fornecedores_Arranged <- arrange(fornecedores_sum,desc(total))
+
+top10Fornecedores <- head(fornecedores_Arranged,10)
+
+top10Fornecedores <- transform(top10Fornecedores, 
                           txtFornecedor = reorder(txtFornecedor, total))
 
-top10Fornecedores <- head(fornecedores_sum,10)
+top10Fornecedores <- transform(top10Fornecedores, total = total/ 1000000)
 
+p <- ggplot(top10Fornecedores, aes(x = txtFornecedor, y = total))
+p + geom_bar(stat="identity", position = "dodge") + coord_flip() + labs(y = "Total recebido em Milhões de R$ ", x = "Fornecedor de Serviço")
 ```
 
+Verificando o ranking dos fornecedores encontramos um resultado que já era esperado pois como observamos antes os maiores gastos são com transporte aéreo e nesse ranking os primeiros colocados são empresas de transporte aéreo. Todavia, vemos um micro empreendedor que recebeu uma quantidade de dinheiro considerável o Douglas Cunha da Silva. Decidi então investigar mais sobre os dados relacionados a esse investidor.
 
+-----------------------------------------------------------------------------------
 
-
-
-# Qual a variação dos dados do fornecedor Douglas Cunha Da Silva Me?
+#1 -  Qual a variação dos dados do fornecedor Douglas Cunha Da Silva Me?
 
 ```{r , echo=FALSE}
 
+dadosDouglas <- filter(ano.atual,txtFornecedor=="DOUGLAS CUNHA DA SILVA ME")
+
+
+dB <- ggplot(dadosDouglas, aes(txtDescricao,vlrLiquido))
+
+dB + geom_boxplot(outlier.colour = "red", outlier.size = 3) + geom_point() + coord_flip()
 
 ```
 
-# Qual o número de pessoas para quem um deputado já pagou passagem? ##levaEuParlamentar
+Ao analisar esse gráfico vemos que os gastos variam muito de preço e a maior parte do dinheiro é usado em Consultorias, Pesquisas e Trabalhos Técnicos. 
+
+Uma outra curiosidade que surge é descobrir quais os parlamentares que mais contrataram esse serviço. Analisando o Gráfico:
 
 ```{r , echo=FALSE}
+
+parlamentares_douglas <- group_by(dadosDouglas,txNomeParlamentar)
+parlamentares_douglas_sum <- summarise(parlamentares_douglas, total=sum(vlrLiquido))
+
+parlamentares_Arranged <- transform(parlamentares_douglas_sum, 
+                          txNomeParlamentar = reorder(txNomeParlamentar, total))
+
+p <- ggplot(parlamentares_Arranged, aes(x = txNomeParlamentar, y = total))
+p + geom_bar(stat="identity", position = "dodge") + coord_flip() + labs(y = "Total recebido ", x = "Parlamentar")
+
 ```
 
+
+Vemos que o parlamentar que mais gastou com essa empresa foi o Roberto Sales, gastando mais de R$ 90000,00.
+
+Sabendo quais os parlamentares que mais gastam agora eu desejo saber se esse fornecedor é uma preferência de dado partido, analisando agora os gastos por partido.
+
+```{r, echo=FALSE}
+
+
+partidos_douglas <- group_by(dadosDouglas,sgPartido)
+partidos_douglas_sum <- summarise(partidos_douglas, total=sum(vlrLiquido))
+
+partidos_douglas_sum$fraction = partidos_douglas_sum$total / sum(partidos_douglas_sum$total)
+
+partidos_douglas_sum = partidos_douglas_sum[order(partidos_douglas_sum$fraction), ]
+partidos_douglas_sum$ymax = cumsum(partidos_douglas_sum$fraction)
+partidos_douglas_sum$ymin = c(0, head(partidos_douglas_sum$ymax, n=-1))
+
+ggplot(partidos_douglas_sum, aes(fill=sgPartido,  ymax=ymax, ymin=ymin, xmax=4, xmin=3)) + 
+     geom_rect() +
+     coord_polar(theta="y") +
+     xlim(c(0, 4)) +
+     labs(title="Distribuição dos gastos")
+
+
+```
+
+
+De acorodo com a distribuição vemos que o PRB é o que mais gasta com serviços prestados pela Douglas Cunha Da Silva Me. Bastante compreensível dado que o Roberto Sales é do PRB.
+
+-----------------------------------------------------------------------------------
+
+O maior gasto encontrado foi com Emissão de Bilhetes Aéreos, sabendo disso queria saber se eles estão emitindo bilhetes para muitas pessoas diferentes.
+
+#2 - Qual o número de pessoas para quem um deputado já pagou passagem? ##levaEuParlamentar
+
+```{r , echo=FALSE}
+
+emissao_bilhetes <- filter(ano.atual,txtDescricao=="Emissão Bilhete Aéreo")
+
+a <- emissao_bilhetes %>% 
+  group_by(txNomeParlamentar,txtPassageiro) %>%
+  distinct() %>%
+  ungroup() %>%
+  group_by(txNomeParlamentar) %>%
+  summarise(total = n())
+
+a <- arrange(a,desc(total))
+
+top_emissao_bilhetes <- head(a,10)
+
+p <- ggplot(transform(top_emissao_bilhetes, 
+                          txNomeParlamentar = reorder(txNomeParlamentar, total)), aes(x = txNomeParlamentar, y = total))
+p + geom_bar(stat="identity", position = "dodge") + coord_flip() + labs(y = "Total recebido ", x = "Parlamentar")
+
+```
+
+Podemos ver que a parlamentar que mais compra passagens para pessoas diferentes é a Christiane de Souza, que comprou passagens para 36 pessoas diferentes seguido por Paulo Pereira com 35.
+
+Será que esses valores são considerados normais?
+
+```{r , echo=FALSE}
+
+dB <- ggplot(a, aes(c("Estátisca dos parlamentares"),total))
+
+dB + geom_boxplot(outlier.colour = "red", outlier.size = 3) + geom_point() + coord_flip() + labs(y = "Número de pessoas", x = "")
+```
+
+Os pontos em vermelhos são considerados atípicos, ou seja, todos os parlamentares que estavam na lista do top 10 pagaram passagens para um número alto de pessoas, maior do que o normal.

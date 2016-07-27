@@ -1,0 +1,84 @@
+---
+title: "Problema 2 - Checkpoint 2"
+output: 
+  html_document:
+  theme: yeti
+  toc: true
+  toc_float: true
+  fig_width: 5
+  fig_height: 4
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(dplyr)
+library(plotly)
+
+ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+
+
+
+dadosDouglas <- filter(ano.atual,txtFornecedor=="DOUGLAS CUNHA DA SILVA ME")
+
+parlamentares_douglas <- group_by(dadosDouglas,txNomeParlamentar)
+parlamentares_douglas_sum <- summarise(parlamentares_douglas, total=sum(vlrLiquido))
+
+partidos_douglas <- group_by(dadosDouglas,sgPartido)
+partidos_douglas_sum <- summarise(partidos_douglas, total=sum(vlrLiquido))
+
+partidos_douglas_sum$fraction = partidos_douglas_sum$total / sum(partidos_douglas_sum$total)
+
+partidos_douglas_sum = partidos_douglas_sum[order(partidos_douglas_sum$fraction), ]
+partidos_douglas_sum$ymax = cumsum(partidos_douglas_sum$fraction)
+partidos_douglas_sum$ymin = c(0, head(partidos_douglas_sum$ymax, n=-1))
+
+```
+
+# Contextualização:
+
+Os dados que estão sendo analisados são referentes aos gastos declarados pelos deputados durante o ano de 2016. 
+
+Os gráficos abaixo mostram os gastos com um mesmo Fornecedor por partido.
+
+# Primeira vizualização: 
+
+```{r}
+
+ggplot(partidos_douglas_sum, aes(fill=sgPartido,  ymax=ymax, ymin=ymin, xmax=4, xmin=3)) + 
+     geom_rect() +
+     coord_polar(theta="y") +
+     xlim(c(0, 4)) +
+     labs(title="Distribuição dos gastos")
+
+
+```
+
+
+# Visualização refatorada:
+
+```{r}
+
+library(plotly)
+
+xa <- list(title="")
+ya <- list(title="Total em milhares de R$")
+
+p <- plot_ly(data =parlamentares_douglas,
+  text = paste("Parlamentar: ", txNomeParlamentar),
+  color= sgPartido,
+  mode = "markers",
+  type = "scatter", 
+  marker= list(color=c("lightblue"),
+    opacity = 1, 
+    size = 10, 
+    sizemode = "area", 
+    sizeref = 0.5, 
+    symbol = "circle"),
+  x = sgPartido,
+  y = vlrLiquido)%>% layout(xaxis = xa, yaxis = ya)
+
+p
+```
+
