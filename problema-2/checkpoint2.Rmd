@@ -60,7 +60,6 @@ ggplot(partidos_douglas_sum, aes(fill=sgPartido,  ymax=ymax, ymin=ymin, xmax=4, 
 
 ```{r}
 
-library(plotly)
 
 xa <- list(title="")
 ya <- list(title="Total em milhares de R$")
@@ -82,3 +81,54 @@ p <- plot_ly(data =parlamentares_douglas,
 p
 ```
 
+```{r}
+
+library(plotly)
+library(ggplot2)
+library(dplyr)
+
+ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+
+
+emissao_bilhetes <- filter(ano.atual,txtDescricao=="Emissão Bilhete Aéreo")
+
+contagemBilhetesDeputado <- emissao_bilhetes %>% 
+  group_by(txNomeParlamentar,txtPassageiro) %>%
+  distinct() %>%
+  ungroup() %>%
+  group_by(txNomeParlamentar) %>%
+  summarise(Total = n())
+
+contagemBilhetesDeputado <- arrange(contagemBilhetesDeputado,desc(Total))
+
+contagemBilhetesDeputado$Partido <- ""
+
+for (parlamentar in contagemBilhetesDeputado$txNomeParlamentar){
+  parlamentarSelecionado <- filter(ano.atual,txNomeParlamentar==parlamentar)[1,]
+  
+  partido <- parlamentarSelecionado$sgPartido
+  
+  contagemBilhetesDeputado$Partido[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <-  lapply(parlamentarSelecionado$sgPartido, as.character)
+  
+}
+
+xa <- list(title="")
+ya <- list(title="Número de Pessoas")
+
+p <- plot_ly(data=contagemBilhetesDeputado,
+  text = paste("Parlamentar: ", txNomeParlamentar),
+  color= Partido,
+  mode = "markers",
+  type = "scatter", 
+  marker= list(color=c("lightblue"),
+    opacity = 1, 
+    size = 10, 
+    sizemode = "area", 
+    sizeref = 0.5, 
+    symbol = "circle"),
+  x = Partido,
+  y = Total)%>% layout(xaxis = xa, yaxis = ya)
+
+p
+
+```

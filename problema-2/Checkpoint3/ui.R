@@ -7,28 +7,41 @@
 #    http://shiny.rstudio.com/
 #
 
-library(shiny)
+library(plotly)
+library(ggplot2)
+library(dplyr)
 
-# Define UI for application that draws a histogram
+ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+
+
+emissao_bilhetes <- filter(ano.atual,txtDescricao=="Emissão Bilhete Aéreo")
+
+contagemBilhetesDeputado <- emissao_bilhetes %>% 
+  group_by(txNomeParlamentar,txtPassageiro) %>%
+  distinct() %>%
+  ungroup() %>%
+  group_by(txNomeParlamentar) %>%
+  summarise(Total = n())
+
+contagemBilhetesDeputado <- arrange(contagemBilhetesDeputado,desc(Total))
+
+contagemBilhetesDeputado$Partido <- ""
+
+for (parlamentar in contagemBilhetesDeputado$txNomeParlamentar){
+  parlamentarSelecionado <- filter(ano.atual,txNomeParlamentar==parlamentar)[1,]
+  
+  partido <- parlamentarSelecionado$sgPartido
+  
+  contagemBilhetesDeputado$Partido[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <-  lapply(parlamentarSelecionado$sgPartido, as.character)
+  
+}
+
 shinyUI(fluidPage(
-  
-  titlePanel("Checkpoint 3 - #MeLevaParlamentar"),
-  
-  br(),
-  br(),
-  
-  p("Analisando os gastos dos deputados durante o ano 2016 percebe-se que uma das categorias em que eles mais gastão é com a Emissão de Billhetes Aéreos. Partindo disso
-    a pergunta que surgiu foi, eles emitem bilhetes para outras pessoas ou só para eles mesmos?"),
-  
-  
-  br(),
-  
-  sidebarLayout(
-    sidebarPanel(
-      
-    ),
-    mainPanel(
-    )
+  titlePanel("Número de passageiros"),
+  sidebarPanel(
+    sliderInput("bins", "Number of bins:", min = 5, max = 40, value = c(10,35))
+  ),
+  mainPanel(
+    plotlyOutput("passageirosPlot")
   )
-  
 ))
