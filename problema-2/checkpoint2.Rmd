@@ -97,9 +97,11 @@ contagemBilhetesDeputado <- emissao_bilhetes %>%
   distinct() %>%
   ungroup() %>%
   group_by(txNomeParlamentar) %>%
-  summarise(Total = n())
+  summarise(total_pessoas = n())
 
-contagemBilhetesDeputado <- arrange(contagemBilhetesDeputado,desc(Total))
+totalBilhetesDeputado <- group_by(emissao_bilhetes,txNomeParlamentar) %>% summarise(total = sum(vlrLiquido))
+
+contagemBilhetesDeputado <- arrange(contagemBilhetesDeputado,desc(total_pessoas))
 
 contagemBilhetesDeputado$Partido <- ""
 
@@ -110,7 +112,16 @@ for (parlamentar in contagemBilhetesDeputado$txNomeParlamentar){
   
   contagemBilhetesDeputado$Partido[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <-  lapply(parlamentarSelecionado$sgPartido, as.character)
   
+  parlamentarSelecionado<-filter(totalBilhetesDeputado,txNomeParlamentar==parlamentar)[1,]
+  
+  total <- parlamentarSelecionado$total
+  
+  contagemBilhetesDeputado$total_vlr[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <- total
+  
+  
 }
+
+
 
 xa <- list(title="")
 ya <- list(title="Número de Pessoas")
