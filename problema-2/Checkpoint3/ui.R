@@ -11,38 +11,6 @@ library(plotly)
 library(ggplot2)
 library(dplyr)
 
-ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
-
-
-emissao_bilhetes <- filter(ano.atual,txtDescricao=="Emissão Bilhete Aéreo")
-
-contagemBilhetesDeputado <- emissao_bilhetes %>%
-  group_by(txNomeParlamentar,txtPassageiro) %>%
-  distinct() %>%
-  ungroup() %>%
-  group_by(txNomeParlamentar) %>%
-  summarise(total_pessoas = n())
-
-totalBilhetesDeputado <- group_by(emissao_bilhetes,txNomeParlamentar) %>% summarise(total = sum(vlrLiquido))
-
-contagemBilhetesDeputado <- arrange(contagemBilhetesDeputado,desc(total_pessoas))
-
-contagemBilhetesDeputado$Partido <- ""
-
-for (parlamentar in contagemBilhetesDeputado$txNomeParlamentar){
-  parlamentarSelecionado <- filter(ano.atual,txNomeParlamentar==parlamentar)[1,]
-
-  partido <- parlamentarSelecionado$sgPartido
-
-  contagemBilhetesDeputado$Partido[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <-  lapply(parlamentarSelecionado$sgPartido, as.character)
-
-  parlamentarSelecionado<-filter(totalBilhetesDeputado,txNomeParlamentar==parlamentar)[1,]
-
-  total <- parlamentarSelecionado$total
-
-  contagemBilhetesDeputado$total_vlr[contagemBilhetesDeputado$txNomeParlamentar == parlamentar] <- total
-}
-
 shinyUI(fluidPage(
   titlePanel("Checkpoint 3 - #MeLevaParlamentar"),
   br(),
