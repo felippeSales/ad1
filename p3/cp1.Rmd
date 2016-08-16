@@ -1,0 +1,78 @@
+---
+title: "Problema 3 - Checkpoint 1 - Clustering"
+author: "Felipe Sales"
+date: "9 de agosto de 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(plotly)
+library(dplyr)
+library(ggplot2)
+library(ggfortify)
+library(cluster)
+
+dados <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/p3/ementas.csv")
+
+```
+
+## Os dados
+
+Os dados são referentes a emendas parlamentares e estão agrupadas por área e por deputado. A emenda parlamentar é o instrumento que o Congresso Nacional possui para poder participar da elaboração do orçamento anual, ou seja, é através das emendas que os parlamentares podem alocar recursos e atender as demandas das comunidades as quais eles representam. Existem também emendas que são propostas por comissões, são emendas que são propostas pelas comissões técnicas permanentes do Congresso Nacional.
+
+## Filtragem
+
+A hipótese que eu queria investigar é a seguinte: será que existe dois grupos de deputados, os que investem em agricultura e os que investem em Gestão Ambiental?
+Com base nessa pergunta os dados que eu escolhi analisar foram justamente os de Agricultura e Gestão Ambiental. Dentro desses dados eu decidi remover todos os que apresentavam 0 nas duas áreas. Além dos zeros também decidi remover os dados das ementas propostas pelas comissões:  COMISSAO DE DESENVOLVIMENTO REGIONAL E TURISMO - CDR, COMISSAO DE DESENVOLVIMENTO URBANO - CDU, COMISSAO DE INTEGRACAO NACIONAL, DESENVOLVIMENTO REGIONAL E DA AMAZONIA - CINDRA, COMISSAO MISTA DE PLANOS, ORCAMENTOS PUBLICOS E FISCALIZACAO.
+
+
+## Método escolhido
+
+O método de agrupamento escolhido foi k-means, dado que a minha pergunta era saber se existem de fato esses dois grupos, o kmeans foi o escolhido justamente por um de seus parametros ser o número de grupos desejados.
+
+## Resultado
+
+```{r}
+
+#dados_detalhes <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/p3/emendas_detalhes_parlamentar.csv")
+
+dados.sem.comissoes <- dados[((dados$NOME_PARLAMENTAR != "COMISSAO DE DESENVOLVIMENTO REGIONAL E TURISMO - CDR" ) & (dados$NOME_PARLAMENTAR != "COMISSAO DE DESENVOLVIMENTO URBANO - CDU") & (dados$NOME_PARLAMENTAR != "COMISSAO DE INTEGRACAO NACIONAL, DESENVOLVIMENTO REGIONAL E DA AMAZONIA - CINDRA") &(dados$NOME_PARLAMENTAR != "COMISSAO MISTA DE PLANOS, ORCAMENTOS PUBLICOS E FISCALIZACAO")),]
+
+dados.sem.comissoes <- na.omit(dados.sem.comissoes)
+
+
+dados.sem.comissoes <- dados.sem.comissoes[!(dados.sem.comissoes$Agricultura == 0 & dados.sem.comissoes$Gestão.Ambiental == 0),]
+
+dados.filtered <- dados.sem.comissoes %>% select(Agricultura,Gestão.Ambiental)
+
+cl = kmeans(dados.filtered,2)
+
+dados.filtered$cluster=factor(cl$cluster)
+centers=as.data.frame(cl$centers)
+
+ya <- list(title="Gestão Ambiental, em Milhões de R$")
+xa <- list(title="Agricultura, em Milhões de R$")
+
+p <- plot_ly(data=dados.filtered,
+  text = paste("Parlamentar: ", dados$NOME_PARLAMENTAR),
+  color= dados.filtered$cluster,
+  mode = "markers",
+  type = "scatter", 
+  y = Gestão.Ambiental,
+  x = Agricultura)%>% layout(xaxis = xa, yaxis = ya)
+
+p
+
+```
+
+##Comentários
+
+Ao observar o gráfico vemos que há uma polarizacção em torno da agricultura, ou seja, tem mais investimento em agricultura do que em gestão ambiental. Ao tentar distribuir os grupos vemos que não há uma diferença muito nítida, ou seja, o grupamento final não é muito bom. Aparentemente quanto maior o gasto com agricultura menor o gasto com Gestão Ambiental, porém é muito difícil determinar bem os grupos pois os gastos em Gestão Ambiental em geral são pequenos.
+
+#Referencias
+
+http://www.santanadoitarare.pr.gov.br/diariooficial/publicacoes/o_que_emenda_parlamentar.pdf
+
+http://www.orcamentofederal.gov.br/glossario-1/emenda-de-comissao
