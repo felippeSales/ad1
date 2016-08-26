@@ -16,7 +16,7 @@ library(ggplot2)
 library(dplyr)
 library(plotly)
 
-ano.atual <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/problema-1/dados/ano-atual.csv")
+ano.atual <- read.csv("~/Documents/workspace/ufcg/ad1-2016.1/repo/p1/dados/ano-atual.csv")
 
 
 
@@ -68,7 +68,7 @@ p <- plot_ly(data =parlamentares_douglas,
   text = paste("Parlamentar: ", txNomeParlamentar),
   color= sgPartido,
   mode = "markers",
-  type = "scatter", 
+  type = "jitter", 
   marker= list(color=c("lightblue"),
     opacity = 1, 
     size = 10, 

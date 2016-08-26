@@ -1,0 +1,153 @@
+---
+title: "cp2"
+author: "Felipe Sales"
+date: "19 de agosto de 2016"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+require(ggplot2, quietly = TRUE)
+library(ggfortify, quietly = TRUE)
+require(GGally, quietly = TRUE)
+require(reshape2, quietly = TRUE)
+require(dplyr, quietly = TRUE)
+library(knitr, quietly = TRUE)
+library(cluster)
+library(ggdendro)
+library(Rtsne)
+library(plotly)
+
+dados <- read.csv("~/Documents/workspace/UFCG/AD1-2016.1/repo/p3/ementas.csv")
+
+```
+
+## Os dados
+
+Os dados são referentes a emendas parlamentares e estão agrupadas por área e por deputado. A emenda parlamentar é o instrumento que o Congresso Nacional possui para poder participar da elaboração do orçamento anual, ou seja, é através das emendas que os parlamentares podem alocar recursos e atender as demandas das comunidades as quais eles representam. Existem também emendas que são propostas por comissões, são emendas que são propostas pelas comissões técnicas permanentes do Congresso Nacional.
+
+## Filtragem
+
+A hipótese que eu queria investigar é a seguinte: será que existem grupos de deputados, os que investem em agricultura e os que investem em Gestão Ambiental e os que investem em Organização agrária?
+Com base nessa pergunta os dados que eu escolhi analisar foram justamente os de Agricultura, Gestão Ambiental e Organização Agrária. Dentro desses dados eu decidi remover todos os que apresentavam 0 nas tres áreas. Além dos zeros também decidi remover os dados das ementas propostas pelas comissões:  COMISSAO DE DESENVOLVIMENTO REGIONAL E TURISMO - CDR, COMISSAO DE DESENVOLVIMENTO URBANO - CDU, COMISSAO DE INTEGRACAO NACIONAL, DESENVOLVIMENTO REGIONAL E DA AMAZONIA - CINDRA, COMISSAO MISTA DE PLANOS, ORCAMENTOS PUBLICOS E FISCALIZACAO.
+
+```{r, echo=FALSE}
+
+dados.sem.comissoes <- dados[((dados$NOME_PARLAMENTAR != "COMISSAO DE DESENVOLVIMENTO REGIONAL E TURISMO - CDR" ) & (dados$NOME_PARLAMENTAR != "COMISSAO DE DESENVOLVIMENTO URBANO - CDU") & (dados$NOME_PARLAMENTAR != "COMISSAO DE INTEGRACAO NACIONAL, DESENVOLVIMENTO REGIONAL E DA AMAZONIA - CINDRA") &(dados$NOME_PARLAMENTAR != "COMISSAO MISTA DE PLANOS, ORCAMENTOS PUBLICOS E FISCALIZACAO")),]
+
+dados.sem.comissoes <- na.omit(dados.sem.comissoes)
+
+
+dados.sem.comissoes <- dados.sem.comissoes[!(dados.sem.comissoes$Agricultura == 0 & dados.sem.comissoes$Gestão.Ambiental == 0 & dados.sem.comissoes$Organização.Agrária == 0 ),]
+
+dados.filtered <- dados.sem.comissoes %>% select(NOME_PARLAMENTAR,Agricultura,Gestão.Ambiental,Organização.Agrária)
+
+
+cl = kmeans(select(dados.filtered, -NOME_PARLAMENTAR),3)
+
+
+dados.filtered$cluster=factor(cl$cluster)
+
+```
+
+
+## PCA
+
+
+```{r, echo=FALSE, fig.width=12, fig.height=10}
+
+dados.log <- dados.filtered
+
+dados.log[,2:4] <- log(dados.filtered[,2:4]+ 1)
+
+dados.log$NOME_PARLAMENTAR <- dados.filtered$NOME_PARLAMENTAR
+
+row.names(dados.log) = dados.log$NOME_PARLAMENTAR
+
+#ggpairs(select(dados.log,Gestão.Ambiental,Agricultura, Organização.Agrária))
+
+pr.out = prcomp(select(dados.log,-NOME_PARLAMENTAR, -cluster), scale = TRUE) 
+
+
+autoplot(pr.out, data=dados.log,colour = 'cluster', label.size = 3, shape = FALSE, 
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, loadings.label.size = 3)
+
+```
+
+
+Analizando o gráfico da variaância explicada vemos que se removermos uma das variáveis do conjunto, haverá uma perda de aproximadamente 15% da informação.
+
+```{r, echo=FALSE}
+
+plot_pve <- function(prout){
+  pr.var <- pr.out$sdev^2
+  pve <- pr.var / sum(pr.var)
+  df = data.frame(x = 1:NROW(pve), y = cumsum(pve))
+  ggplot(df, aes(x = x, y = y)) + 
+    geom_point(size = 3) + 
+    geom_line() + 
+    labs(x='Principal Component', y = 'Cumuative Proportion of Variance Explained')
+}
+
+plot_pve(pr.out)
+
+``` 
+
+
+##t-SNE
+
+```{r, echo=FALSE}
+
+tsne.out = Rtsne(select(dados.filtered, -NOME_PARLAMENTAR, -cluster), 
+                 verbose = TRUE, check_duplicates= FALSE)
+
+
+df = as.data.frame(tsne.out$Y)
+df$NOME_PARLAMENTAR = dados.filtered$NOME_PARLAMENTAR
+df$cluster = dados.filtered$cluster
+
+p <- plot_ly(data=df,
+  text = paste("Parlamentar: ", df$NOME_PARLAMENTAR),
+  color= df$cluster,
+  mode = "markers",
+  type = "scatter", 
+  y = V2,
+  x = V1)
+
+p
+
+
+
+
+```
+
+
+##Resultados
+
+Foi aplicado um kmeans com 3 grupos para colorir os gráficos.
+
+- PCA
+
+Após analizar as variáveis vimos que eles tem uma distribuição muito concentrada, praticamente exponencial. Por isso, antes de rodar o algoritmo foi aplicado o log + 1 em todas as variáveis para que a distribuicção se espalhe mais um pouco. PS: O +1 é para poder aplicar o log nas variáveis que são 0.
+
+O resultado do PCA é bem interessante pois as variáveis formam eixos bem definidos, ou seja elas tem pouca relação enre si, outro fato interessante é que são formados grupos bem definidos. Com relação ao kmeans, vemos que os grupos formados não se mantem heterogênios no PCA, ou seja eles se misturam no gráfico.
+
+
+- tSNE
+
+O resultado do TSNE é um gráfico com um formato um tanto quanto peculiar, a formação de grupos não é tão nítida como é no PCA, porém podemos ver que os clusters formados no kmeans estão bem juntos no tSNE ao contrário do PCA.
+
+- Opinião
+
+Olhando para o gráfico do PCA dá pra ver que há uma polarização em torno da Agricultura e da Organizacção Agrária. Observamos também que o pessoal que investe em muito em gestão ambiental, tende a ser mais eclético e também investir em uma das duas áreas.
+
+Nesse caso o PCA se mostrou mais informativo, pois eu consigo enxergar grupos com mais nítidez e dizer quais as variáveis que estão mais influenciando naquele determinado grupo. Acho o TSNE pode ser mais útil se tivermos uma quantidade maior de variáveis. 
+
+#Referencias
+
+http://www.santanadoitarare.pr.gov.br/diariooficial/publicacoes/o_que_emenda_parlamentar.pdf
+
+http://www.orcamentofederal.gov.br/glossario-1/emenda-de-comissao
