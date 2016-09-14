@@ -1,0 +1,332 @@
+---
+title: "CP1 - P4"
+date: "9 de setembro de 2016"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(GGally)
+library(dplyr)
+library(resample)
+library(stringr)
+
+theme_set(theme_bw())
+
+movies <- read.csv("movies.csv")
+ratings <- read.csv("ratings.csv")
+
+ci = c(.025, .975)
+reps = 1000
+```
+
+
+```{r, echo=FALSE}
+
+harryPotter <- movies[grep(pattern="Harry Potter",x=movies$title),]
+
+hp1Ratings <- ratings[(ratings$movieId == harryPotter[1,]$movieId),]
+
+hp2Ratings <- ratings[(ratings$movieId == harryPotter[2,]$movieId),]
+
+hp3Ratings <- ratings[(ratings$movieId == harryPotter[3,]$movieId),]
+
+hp4Ratings <- ratings[(ratings$movieId == harryPotter[4,]$movieId),]
+
+hp5Ratings <- ratings[(ratings$movieId == harryPotter[5,]$movieId),]
+
+hp6Ratings <- ratings[(ratings$movieId == harryPotter[6,]$movieId),]
+
+hp7Ratings <- ratings[(ratings$movieId == harryPotter[7,]$movieId),]
+
+hp8Ratings <- ratings[(ratings$movieId == harryPotter[8,]$movieId),]
+
+```
+
+#Os Dados
+
+Os dados aqui analisados são referentes a filmes e seus respectivos gêneros, avaliações, títulos, etc. Esses dados podem ser encontrados em: http://grouplens.org/datasets/movielens/latest/. Para essa análise usaremos o dataset small.
+
+#1 - Escolha uma trilogia (ou uma n-logia com n > 3) e avalie para qual dos episódios da trilogia há melhor avaliação e para qual há mais variação nas notas atribuídas ao filme. 
+
+Para responder essa questão foi escolhido os dados referentes aos 8 Filmes de Harry Potter. Para responder a parte da melhor avaliação primeiramente nós testamos a média de avalições de cada filme. E o resultado foi:
+
+#Média
+
+Utilizando um intervalo de confiança de 2,5% até 97,5% nós podemos dizer que a média de avaliações do respectivo filme está dentro daquele intervalo. Infelizmente se observamos os intervalos vemos que todos estão se interceptando, portanto não é possível afirmar qual o que tem a melhor avaliação em média. 
+
+```{r,  fig.width=12}
+
+b = bootstrap(hp1Ratings, mean(rating), R = reps)
+hp1Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp1Ratings.ci) <- "HP1 - Pedra"
+
+b = bootstrap(hp2Ratings, mean(rating), R = reps)
+hp2Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp2Ratings.ci) <- "HP2 - Câmara"
+
+b = bootstrap(hp3Ratings, mean(rating), R = reps)
+hp3Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp3Ratings.ci) <- "HP3 - Prisioneiro"
+
+b = bootstrap(hp4Ratings, mean(rating), R = reps)
+hp4Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp4Ratings.ci) <- "HP4 - Cálice"
+
+b = bootstrap(hp5Ratings, mean(rating), R = reps)
+hp5Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp5Ratings.ci) <- "HP5 - Ordem"
+
+b = bootstrap(hp6Ratings, mean(rating), R = reps)
+hp6Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp6Ratings.ci) <- "HP6 - Príncipe"
+
+b = bootstrap(hp7Ratings, mean(rating), R = reps)
+hp7Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp7Ratings.ci) <- "HP7 - Réliquias1"
+
+b = bootstrap(hp8Ratings, mean(rating), R = reps)
+hp8Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp8Ratings.ci) <- "HP8 - Réliquias2"
+
+df = data.frame(rbind(hp1Ratings.ci, 
+                      hp2Ratings.ci,
+                      hp3Ratings.ci,
+                      hp4Ratings.ci,
+                      hp5Ratings.ci,
+                      hp6Ratings.ci,
+                      hp7Ratings.ci,
+                      hp8Ratings.ci))
+
+df$filme = row.names(df)
+
+df %>% 
+  ggplot(aes(x = filme, ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2)
+
+```
+
+
+#Mediana
+
+Para tentar contorna o problema das intersecções tentou-se aumentar o número de repetições e diminuir a confiança, porém mesmo assim os intervalos ainda apresentavam muitas intersecções. Como o resultado para a média foi inconclusivo decidiu-se então utilizar a mediana como medida parâmetro, ainda utilizando a mesma confiança da média. 
+
+```{r,fig.width=12}
+
+b = bootstrap(hp1Ratings, median(rating), R = reps)
+hp1Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp1Ratings.ci) <- "HP1 - Pedra"
+
+b = bootstrap(hp2Ratings, median(rating), R = reps)
+hp2Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp2Ratings.ci) <- "HP2 - Câmara"
+
+b = bootstrap(hp3Ratings, median(rating), R = reps)
+hp3Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp3Ratings.ci) <- "HP3 - Prisioneiro"
+
+b = bootstrap(hp4Ratings, median(rating), R = reps)
+hp4Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp4Ratings.ci) <- "HP4 - Cálice"
+
+b = bootstrap(hp5Ratings, median(rating), R = reps)
+hp5Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp5Ratings.ci) <- "HP5 - Ordem"
+
+b = bootstrap(hp6Ratings, median(rating), R = reps)
+hp6Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp6Ratings.ci) <- "HP6 - Príncipe"
+
+b = bootstrap(hp7Ratings, median(rating), R = reps)
+hp7Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp7Ratings.ci) <- "HP7 - Réliquias1"
+
+b = bootstrap(hp8Ratings, median(rating), R = reps)
+hp8Ratings.ci = CI.percentile(b, probs = ci)
+row.names(hp8Ratings.ci) <- "HP8 - Réliquias2"
+
+df = data.frame(rbind(hp1Ratings.ci, 
+                      hp2Ratings.ci,
+                      hp3Ratings.ci,
+                      hp4Ratings.ci,
+                      hp5Ratings.ci,
+                      hp6Ratings.ci,
+                      hp7Ratings.ci,
+                      hp8Ratings.ci))
+
+df$filme = row.names(df)
+
+df %>% 
+  ggplot(aes(x = filme, ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2)
+
+```
+
+Conclusão: Utilizando a mediana ainda é impossível dizer qual o filme que tem a melhor avaliação, todavia, nós podemos inferir, utilizando a mediana como medida parâmetro, que o oitavo filme é mais bem avaliado que 1,2,3,4,5.
+
+
+#Variância
+
+Analizando os intervalos para a variância também é impossível dizer qual o filme que tem a maior variação nas avaliações, nesse caso nós podemos considerar que estatisticamente eles tem a mesma variância. 
+
+```{r,fig.width=12}
+
+b = bootstrap(hp1Ratings, var(rating), R = reps)
+hp1Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp1Ratings.ci) <- "HP1 - Pedra"
+
+b = bootstrap(hp2Ratings, var(rating), R = reps)
+hp2Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp2Ratings.ci) <- "HP2 - Câmara"
+
+b = bootstrap(hp3Ratings, var(rating), R = reps)
+hp3Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp3Ratings.ci) <- "HP3 - Prisioneiro"
+
+b = bootstrap(hp4Ratings, var(rating), R = reps)
+hp4Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp4Ratings.ci) <- "HP4 - Cálice"
+
+b = bootstrap(hp5Ratings, var(rating), R = reps)
+hp5Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp5Ratings.ci) <- "HP5 - Ordem"
+
+b = bootstrap(hp6Ratings, var(rating), R = reps)
+hp6Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp6Ratings.ci) <- "HP6 - Príncipe"
+
+b = bootstrap(hp7Ratings, var(rating), R = reps)
+hp7Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp7Ratings.ci) <- "HP7 - Réliquias1"
+
+b = bootstrap(hp8Ratings, var(rating), R = reps)
+hp8Ratings.ci = CI.bca(b, probs = ci)
+row.names(hp8Ratings.ci) <- "HP8 - Réliquias2"
+
+df = data.frame(rbind(hp1Ratings.ci, 
+                      hp2Ratings.ci,
+                      hp3Ratings.ci,
+                      hp4Ratings.ci,
+                      hp5Ratings.ci,
+                      hp6Ratings.ci,
+                      hp7Ratings.ci,
+                      hp8Ratings.ci))
+
+df$filme = row.names(df)
+
+df %>% 
+  ggplot(aes(x = filme, ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2)
+
+```
+
+#2 - Normalmente os filmes têm vários gêneros. Existe uma relação entre em quantos gêneros os filmes se encaixam e a avaliação que os filmes recebem? Mais especificamente: se consideramos a os filmes com 1, 2, 3 ... gêneros, existe alguma quantidade de gêneros num mesmo filme que em geral recebe avaliações melhores? Caso exista, estime a diferença entre essa combinação e filmes com apenas um gênero.
+
+Para a nossa análise iremos desconsiderar os grupos que tem menos de 30 avaliações, nesse caso os filmes com mais de 7 gêneros.
+
+```{r, echo=FALSE,  fig.width=12}
+
+movies$genres <- as.character(movies$genres)
+movies =  movies %>%
+    rowwise() %>%
+    mutate(num_genres = length(unlist(strsplit(genres, '[|]'))))
+
+g1 <- movies[(movies$num_genres == 1),]
+g2 <- movies[(movies$num_genres == 2),]
+g3 <- movies[(movies$num_genres == 3),]
+g4 <- movies[(movies$num_genres == 4),]
+g5 <- movies[(movies$num_genres == 5),]
+g6 <- movies[(movies$num_genres == 6),]
+g7 <- movies[(movies$num_genres == 7),]
+#g8 <- movies[(movies$num_genres == 8),]
+#g10 <- movies[(movies$num_genres == 10),]
+
+
+g1Ratings <- ratings[ratings$movieId %in% g1$movieId,]
+g2Ratings <- ratings[ratings$movieId %in% g2$movieId,]
+g3Ratings <- ratings[ratings$movieId %in% g3$movieId,]
+g4Ratings <- ratings[ratings$movieId %in% g4$movieId,]
+g5Ratings <- ratings[ratings$movieId %in% g5$movieId,]
+g6Ratings <- ratings[ratings$movieId %in% g6$movieId,]
+g7Ratings <- ratings[ratings$movieId %in% g7$movieId,]
+#g8Ratings <- ratings[ratings$movieId %in% g8$movieId,]
+#g10Ratings <- ratings[ratings$movieId %in% g10$movieId,]
+
+```
+
+#Mediana
+
+Analisando a mediana não conseguimos dizer qual dos grupos que tem a maior avaliação, nós só conseguimos dizer que: Se pegarmos uma pessoa aleatória que acaba de assistir um filme de 7 gêneros, elas tendem a dar uma maior avaliação que as pessoas que assistem filmes de 1, 2 ou 4 gêneros.  
+
+```{r,   fig.width=12}
+
+b = bootstrap(g1Ratings, median(rating), R = reps)
+g1Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g1Ratings.ci) <- "1 Gênero"
+
+b = bootstrap(g2Ratings, median(rating), R = reps)
+g2Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g2Ratings.ci) <- "2 Gêneros"
+
+b = bootstrap(g3Ratings, median(rating), R = reps)
+g3Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g3Ratings.ci) <- "3 Gêneros"
+
+b = bootstrap(g4Ratings, median(rating), R = reps)
+g4Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g4Ratings.ci) <- "4 Gêneros"
+
+b = bootstrap(g5Ratings, median(rating), R = reps)
+g5Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g5Ratings.ci) <- "5 Gêneros"
+
+b = bootstrap(g6Ratings, median(rating), R = reps)
+g6Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g6Ratings.ci) <- "6 Gêneros"
+
+b = bootstrap(g7Ratings, median(rating), R = reps)
+g7Ratings.ci = CI.percentile(b, probs = ci)
+row.names(g7Ratings.ci) <- "7 Gêneros"
+
+df = data.frame(rbind(g1Ratings.ci, 
+                      g2Ratings.ci,
+                      g3Ratings.ci,
+                      g4Ratings.ci,
+                      g5Ratings.ci,
+                      g6Ratings.ci,
+                      g7Ratings.ci))
+
+df$grupos = row.names(df)
+
+df %>% 
+  ggplot(aes(x = grupos, ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2)
+
+```
+
+
+
+#Diferença
+
+Analisando as médias das diferenças entre as avaliações de filmes com 7 gêneros e filmes de 1 gênero, podemos observar que como o intervalo é positivos, nós podemos dizer que as avaliações de filmes com 7 gêneros são maiores que as de 1 gênero.
+
+```{r, fig.width=12}
+
+b = bootstrap2(data = g7Ratings$rating, 
+               data2 = g1Ratings$rating, 
+               mean)
+
+medians.diff = CI.percentile(b, probs = ci)
+
+df = data.frame(rbind(medians.diff))
+
+df$media = "media"
+
+df %>% 
+  ggplot(aes(x = media, ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2)
+
+```
